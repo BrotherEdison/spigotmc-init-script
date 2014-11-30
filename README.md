@@ -1,14 +1,12 @@
-## minecraft-init-script
+## spigotmc-init-script
 
-by Jamie Bainbridge <<jamie.bainbridge@gmail.com>>
+a fork of [superjamie](https://github.com/superjamie)'s [minecraft-init-script](https://github.com/superjamie/minecraft-init-script)
 
-This is an initscript to run a Minecraft or CraftBukkit server on CentOS, Fedora, and Ubuntu.
+originally by Jamie Bainbridge <<jamie.bainbridge@gmail.com>>
 
-### Note
+by Edison Chen <<brotheredison.github@yahoo.com>>
 
-As of 2015, this script is no longer actively maintained. All the supported distros are moving to systemd, making the concept of an LSB initscript rather outdated. All issues I see are related to bugs in Ubuntu's implementation of Upstart, it works perfectly on CentOS. However I think you are much better learning to use containers like Docker to control a single process and its files. There are many instructions around the internet on how to do this.
-
-Thanks to all supporters over the years. You are welcome to fork this repo if you wish to continue development.
+This is an initscript to run a SpigotMC server on CentOS, Fedora, and Ubuntu. You are still able to run a vanilla Minecraft server with this script, however the more
 
 ### Features
 
@@ -23,14 +21,14 @@ Thanks to all supporters over the years. You are welcome to fork this repo if yo
 
 ### Supported Distributions
 
-*   CentOS 6, CentOS 5, Fedora 14 (probably works on Fedora Core 6 and later, untested)
-*   Ubuntu Server 12.04 LTS
+*   CentOS 5-6, Fedora Core 1-6, Fedora 7-14
+*   Ubuntu (Server), Debian 1-7, Linux Mint (untested)
 
 Other distros which use SysV Init or Upstart will probably work.
 
-Distros using systemd (Fedora 15+, Arch Linux, etc) may not work.
+Distros using systemd (Fedora 15+, Arch Linux, CentOS 7, Debian 8 (future release), etc) will probably not work.
 
-### Requirements
+### Dependencies
 
 *   `screen`, `rsync`
 
@@ -44,7 +42,7 @@ Distros using systemd (Fedora 15+, Arch Linux, etc) may not work.
 
 *   Enough disk space to save your map twice, plus another ~5 times for a week of compressed backup space.
 
-  ie: If your map is 1Gb then you probably need at least 7Gb, plus any space your plugins require and any additional backups you'll be making.
+  ie: If your map is 1GB then you probably need at least 7GB, plus any space your plugins require and any additional backups you'll be making.
 
 ### Installation
 
@@ -73,46 +71,46 @@ As the root user:
 *   Create a new user with a home directory
 
     ~~~
-    useradd -m bukkit
+    useradd -m <<username>>
     ~~~
     
-*   Save the script as `/etc/init.d/minecraft` and make it executable
+*   Save the script as `/etc/init.d/spigotmc` and make it executable
 
     ~~~
-    chmod +x /etc/init.d/minecraft
+    chmod +x /etc/init.d/spigotmc
     ~~~
     
-*   Copy between the `<<COMMENT` and `COMMENT` lines and place the copy at `/etc/default/minecraft`
+*   Copy between the `<<COMMENT` and `COMMENT` lines and place the copy at `/etc/default/spigotmc`
 
-    If you need to edit settings, edit the `/etc/default/minecraft` file, not the initscript
+    If you need to edit settings, edit the `/etc/default/spigotmc` file, not the initscript
 
-*   Allow the bukkit user to run the init script without needing root access
+*   Allow the user to run the init script without needing root access
 
     Type `visudo` and add this line to the bottom:
 
     ~~~
-    bukkit localhost=NOPASSWD:/etc/init.d/minecraft*
+    <<username>> localhost=NOPASSWD:/etc/init.d/spigotmc*
     ~~~
 
-*   Create an alias so you only have to type `minecraft` to run the script
+*   Create an alias so you only have to type `spigotmc` to run the script
 
     Add the following line to both root and bukkit's `~/.bashrc` file:
 
     ~~~
-    alias minecraft='/etc/init.d/minecraft'
+    alias spigotmc='/etc/init.d/spigotmc'
     ~~~
 
 *   Start the server on system boot if desired (CentOS/Fedora)
   
     ~~~
-    chkconfig --add minecraft
-    chkconfig minecraft on
+    chkconfig --add spigotmc
+    chkconfig spigotmc on
     ~~~
 
 *   Start the server on system boot if desired (Ubuntu)
 
     ~~~
-    update-rc.d minecraft defaults
+    update-rc.d spigotmc defaults
     ~~~
 
 As the regular user, bukkit:
@@ -120,10 +118,11 @@ As the regular user, bukkit:
 *   Make the required paths
 
     ~~~
-    mkdir -p ~/backups && mkdir -p ~/craftbukkit
+    mkdir -p ~/spigotmc
+    (ignore if you are backing up to a remote host) mkdir -p ~/backups
     ~~~
 
-*   Put your `craftbukkit.jar`, world, plugins, `server.properties`, etc into `~/craftbukkit`
+*   Put your `spigot.jar`, world, plugins, `server.properties`, etc into `~/spigotmc`
 
 ### Backups
 
@@ -132,30 +131,30 @@ As the regular user, bukkit:
     Type `crontab -e` to open the cron interface and add the following
 
     ~~~
-     0 4 * * * /etc/init.d/minecraft backup              # backup world at 4:00am
-     5 4 * * * /etc/init.d/minecraft logrotate           # rotate logs at 4:05am
-    15 4 * * * /etc/init.d/minecraft removeoldbackups    # remove old backups at 4:30am
+     0 4 * * * /etc/init.d/spigotmc backup              # backup world at 4:00am
+     5 4 * * * /etc/init.d/spigotmc logrotate           # rotate logs at 4:05am
+    15 4 * * * /etc/init.d/spigotmc removeoldbackups    # remove old backups at 4:30am
     ~~~
 
 *   If you have multiple worlds, you can pass the worldname as a parameter to the regular backup
 
     ~~~
-     0 4 * * * /etc/init.d/minecraft backup world1       # backup world1 at 4:00am
-     5 4 * * * /etc/init.d/minecraft logrotate           # rotate logs at 4:05am
-    15 4 * * * /etc/init.d/minecraft backup world2       # backup world2 at 4:15am
-    30 4 * * * /etc/init.d/minecraft removeoldbackups    # remove old backups at 4:30am
+     0 4 * * * /etc/init.d/spigotmc backup world1       # backup world1 at 4:00am
+     5 4 * * * /etc/init.d/spigotmc logrotate           # rotate logs at 4:05am
+    15 4 * * * /etc/init.d/spigotmc backup world2       # backup world2 at 4:15am
+    30 4 * * * /etc/init.d/spigotmc removeoldbackups    # remove old backups at 4:30am
     ~~~
 
 *   If you wish to use a third-party backup solution, just disable world writes
 
     ~~~
-    minecraft save-off
+    spigotmc save-off
     ~~~
 
     Then run your backup tool. Then re-enable world writes
 
     ~~~
-    minecraft save-on
+    spigotmc save-on
     ~~~
 
 ### Multiple Instances
@@ -165,29 +164,29 @@ It is possible to run multiple instances, for example a Creative server and a Su
 *   Copy the script to two new files
 
     ~~~
-    cp /etc/init.d/minecraft /etc/init.d/minecraft-creative
-    cp /etc/init.d/minecraft /etc/init.d/minecraft-survival
+    cp /etc/init.d/spigotmc /etc/init.d/creative
+    cp /etc/init.d/spigotmc /etc/init.d/survival
     ~~~
 
 *   Edit the `Provides` section on Line 6 to the same as the new filename
 
     ~~~
-    # Provides: minecraft-creative
-    # Provides: minecraft-survival
+    # Provides: creative
+    # Provides: survival
     ~~~
 
 *   Create a settings file for each instance in `/etc/default/` using the same name as the script
 
     ~~~
-    /etc/default/minecraft-creative
-    /etc/default/minecraft-creative
+    /etc/default/creative
+    /etc/default/survival
     ~~~
 
 *   Set an alias for each server in `~/.bashrc`
 
     ~~~
-    alias creative='/etc/init.d/minecraft-creative'
-    alias survival='/etc/init.d/minecraft-survival'
+    alias creative='/etc/init.d/creative'
+    alias survival='/etc/init.d/survival'
     ~~~
 
 *   Add the new scripts to `chkconfig` or `update-rc.d`
@@ -195,8 +194,8 @@ It is possible to run multiple instances, for example a Creative server and a Su
 *   Set the paths of the separate maps in each script
 
     ~~~
-    MCPATH="/home/bukkit/craftbukkit-creative"
-    MCPATH="/home/bukkit/craftbukkit-survival"
+    MCPATH="/home/<<username>>/creative"
+    MCPATH="/home/<<username>>/survival"
     ~~~
  
 *   Change your screen session names in each script
@@ -211,25 +210,25 @@ It is possible to run multiple instances, for example a Creative server and a Su
 *   Start the server
 
     ~~~
-    minecraft start
+    spigotmc start
     ~~~
 
 *   Stop the server
 
     ~~~
-    minecraft stop
+    spigotmc stop
     ~~~
 
 *   Restart the server
 
     ~~~
-    minecraft restart
+    spigotmc restart
     ~~~
 
 *   Back up the map and executable
 
     ~~~
-    minecraft backup
+    spigotmc backup
     ~~~
 
     The final compressed backup is done when the `.md5` file appears in the backup directory.
@@ -237,21 +236,22 @@ It is possible to run multiple instances, for example a Creative server and a Su
 *   Back up multiple maps
 
     ~~~
-    minecraft backup world1
-    minecraft backup world2
+    spigotmc backup world1
+    spigotmc backup world2
     ~~~
 
 *   Check the server is running
 
     ~~~
-    minecraft status
+    spigotmc status
     ~~~
 
 *   Get some more info
 
     ~~~
-    minecraft info
+    spigotmc info
 
+    (Sample)
     * CraftBukkit (pid 9037) is running...
     - Java Path : /usr/java/jre1.6.0_31/bin/java
     - Start Command : java -Xms512M -Xmx3584M -jar craftbukkit.jar nogui
@@ -268,7 +268,7 @@ It is possible to run multiple instances, for example a Creative server and a Su
 *   Broadcast a message to the server
 
     ~~~
-    minecraft say
+    spigotmc say
     ~~~
 
     Note that some punctuation like 'apostrophes' will not work.
@@ -296,9 +296,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *   Polhemic on GitHub
 *   Mooash on GitHub
 *   Jon Stephens
+*   Edison Chen <<brotheredison.github@yahoo.com>>
 
 Initial concept based off
 
 *   http://forums.bukkit.org/threads/tutorial-centos-bukkit-installation.56371/
-*   http://www.minecraftwiki.net/wiki/M3tal_Warrior_Server_Startup_Script
+*   http://www.spigotmcwiki.net/wiki/M3tal_Warrior_Server_Startup_Script
 *   http://forums.bukkit.org/threads/admin-linux-init-script-for-bukkit.53235/
