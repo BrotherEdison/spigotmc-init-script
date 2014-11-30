@@ -1,20 +1,20 @@
 #!/bin/bash
-# /etc/init.d/minecraft
+# /etc/init.d/spigotmc
 # version 2014-08-16 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
-# Provides: minecraft
+# Provides: spigotmc
 # Required-Start: $local_fs $remote_fs
 # Required-Stop: $local_fs $remote_fs
 # Should-Start: $network
 # Should-Stop: $network
 # Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
-# Short-Description: Minecraft server
-# Description: Starts the CraftBukkit Minecraft server
+# Short-Description: SpigotMC server
+# Description: Starts the SpigotMC server
 ### END INIT INFO
 
-# minecraft-init-script - An initscript to start Minecraft or CraftBukkit
+# spigotmc-init-script - An initscript to start SpigotMC
 # Copyright (C) 2011-2014 Super Jamie <jamie@superjamie.net>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -44,10 +44,10 @@ fi
 
 <<COMMENT
 ## ---------------------------------------------------------
-## copy between these lines and place them at /etc/default/minecraft
+## copy between these lines and place them at /etc/default/spigotmc
 ## do not include the <<COMMENT and COMMENT words
 
-## Settings for minecraft-init-script
+## Settings for spigotmc-init-script
 
 # Nice looking name of service for script to report back to users
 SERVERNAME="CraftBukkit"
@@ -55,8 +55,9 @@ SERVERNAME="CraftBukkit"
 # Filename of server binary
 SERVICE="craftbukkit.jar"
 
-# URL of server executable for update checking - http://cbukk.it/craftbukkit.jar is the recommended latest Craftbukkit URL
-SERVER_URL="http://cbukk.it/craftbukkit.jar"
+# @deprecated: The only way to get Spigot updated is by using BuildTools.jar (1.8) or SpigotPatcher.jar (1.7).
+## URL of server executable for update checking - http://cbukk.it/craftbukkit.jar is the recommended latest Craftbukkit URL
+#SERVER_URL="http://cbukk.it/craftbukkit.jar"
 
 # Username of non-root user who will run the server
 USERNAME="bukkit"
@@ -74,7 +75,7 @@ BACKUPPATH="/home/bukkit/backups"
 BACKUPS_TO_KEEP="7"
 
 # Name of Screen session
-SCRNAME="minecraft"
+SCRNAME="spigotmc"
 
 ## The Java command to run the server, uncomment one INVOCATION line only!
 
@@ -100,9 +101,9 @@ SETTINGS_FILE_WORKING="1"
 ## ---------------------------------------------------------
 COMMENT
 
-### ### ### ### ### ### ### ### ### ### ### ### ### ###
-### You shouldn't need to edit anything below here! ###
-### ### ### ### ### ### ### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+### You are encouraged to fine-tune this script to your needs!  ###
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
 ## Apply the settings file
 
@@ -287,48 +288,50 @@ mc_saveon() {
   fi
 }
 
-## Checks for update, exits if update not required, updates if the server is not running
+# @deprecated: The only way to get Spigot updated is by using BuildTools.jar (1.8) or SpigotPatcher.jar (1.7).
 
-mc_updatecheck() {
-  echo " * Downloading latest $SERVERNAME executable..."
-  as_user "cd \"$MCPATH\" && curl -# -L -o \"$MCPATH/$SERVICE.update\" \"$SERVER_URL\""
+### Checks for update, exits if update not required, updates if the server is not running
+#
+#mc_updatecheck() {
+#  echo " * Downloading latest $SERVERNAME executable..."
+#  as_user "cd \"$MCPATH\" && curl -# -L -o \"$MCPATH/$SERVICE.update\" \"$SERVER_URL\""
+#
+#  if [ -f "$MCPATH/$SERVICE.update" ]
+#  then
+#    echo " * Checking downloaded update against existing server..."
+#
+#    if $(diff "$MCPATH/$SERVICE" "$MCPATH/$SERVICE.update" >/dev/null)
+#    then
+#      echo " * You are already running the latest version of $SERVERNAME!"
+#      exit 0; # keep this exit in as we don't need to do anything
+#    fi
+#
+#  else
+#    echo " * [ERROR] $SERVERNAME update could not be downloaded."
+#    exit 1
+#  fi
+#
+#  if server_running
+#  then
+#    echo " * $SERVERNAME is running (pid $JAVAPID). Shutting down for update..."
+#  else
+#    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
+#    echo " * [OK] $SERVERNAME successfully updated."
+#  fi
+#}
 
-  if [ -f "$MCPATH/$SERVICE.update" ]
-  then
-    echo " * Checking downloaded update against existing server..."
-
-    if $(diff "$MCPATH/$SERVICE" "$MCPATH/$SERVICE.update" >/dev/null)
-    then
-      echo " * You are already running the latest version of $SERVERNAME!"
-      exit 0; # keep this exit in as we don't need to do anything
-    fi
-
-  else
-    echo " * [ERROR] $SERVERNAME update could not be downloaded."
-    exit 1
-  fi
-
-  if server_running
-  then
-    echo " * $SERVERNAME is running (pid $JAVAPID). Shutting down for update..."
-  else
-    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
-    echo " * [OK] $SERVERNAME successfully updated."
-  fi
-}
-
-## Actually do the executable update
-
-mc_updatedo() {
-  if server_running
-  then
-    echo " * [ERROR] $SERVICE is still running (pid $JAVAPID). Cannot update!"
-    exit 1
-  else
-    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
-    echo " * [OK] $SERVERNAME successfully updated."
-  fi
-}
+### Actually do the executable update
+#
+#mc_updatedo() {
+#  if server_running
+#  then
+#    echo " * [ERROR] $SERVICE is still running (pid $JAVAPID). Cannot update!"
+#    exit 1
+#  else
+#    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
+#    echo " * [OK] $SERVERNAME successfully updated."
+#  fi
+#}
 
 ## Check and see if a worldname was given to the backup command. Use the default world, or check the optional world exists and exit if it doesn't.
 
@@ -505,14 +508,28 @@ mc_console() {
 ## Broadcasts a message
 
 mc_say() {
+  if [ -f $MCPATH/plugins/CommandBook.jar ]; then
+    echo "CommandBook found! Using CommandBook's /broadcast for broadcasting."
+		USE_PLUGIN_BROADCAST=1
+	elif [ -f $MCPATH/plugins/Essentials.jar ]; then
+		echo "Essentials found! Using Essentials' /broadcast for broadcasting."
+		USE_PLUGIN_BROADCAST=1
+	else
+		echo "No plugin found! Using Vanilla /say for broadcasting."
+		USE_PLUGIN_BROADCAST=0
+	fi
   say_string="${@:1}"
   if [[ -z "$say_string" ]]
   then
-    echo " * You need to enter your message. Usage; \"minecraft say message\""
+    echo " * You need to enter your message. Usage; \"spigotmc say message\""
   elif server_running
   then
     echo " * Broadcasting \"$say_string\""
-    as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"say $say_string\"\015'"
+		if [ $USE_PLUGIN_BROADCAST=1 ]; then
+    	as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"broadcast $say_string\"\015'"
+		else
+			as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"say $say_string\"\015'"
+		fi
   else
     echo " * [ERROR] $SERVERNAME was not running!"
     exit 1
@@ -534,12 +551,7 @@ case "$1" in
  mc_start
  ;;
   update)
- mc_updatecheck
- mc_stop
- mc_backupmap
- mc_backupexe
- mc_updatedo
- mc_start
+ echo "This option is deprecated since version 2014-11-30."
  ;;
   backup)
  mc_checkbackup "$2"
@@ -580,7 +592,7 @@ case "$1" in
  mc_say "${@:2}"
  ;;
   *)
- echo " * Usage: minecraft {start|stop|restart|backup (worldname)|save-on|save-off|update|status|info|console|say}"
+ echo " * Usage: spigotmc {start|stop|restart|backup (worldname)|save-on|save-off|status|info|console|say}"
  exit 1
  ;;
 esac
