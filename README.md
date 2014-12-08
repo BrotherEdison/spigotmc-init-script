@@ -297,6 +297,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *   Mooash on GitHub
 *   Jon Stephens
 *   Edison Chen <<brotheredison.github@yahoo.com>>
+* invalid-email-address on GitHub (me)
 
 Initial concept based off
 
