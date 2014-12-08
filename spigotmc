@@ -221,7 +221,7 @@ mc_stop() {
   then
     echo " * $SERVERNAME is running (pid $JAVAPID). Commencing shutdown..."
     echo " * Notifying users of shutdown..."
-    as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"say SERVER SHUTTING DOWN IN 10 SECONDS. Saving map...\"\015'"
+    as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"say PLANNED SHUTDOWN IN 10 SECONDS. Saving map...\"\015'"
     echo -n " * Saving map named \"$WORLDNAME\" to disk"
     as_user "screen -p 0 -S $SCRNAME -X eval 'stuff \"save-all\"\015'"
 
