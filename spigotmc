@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/spigotmc
-# version 2014-08-16 (YYYY-MM-DD)
+# version 2014-12-08 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides: spigotmc
@@ -43,6 +43,7 @@ if [ -f /lib/lsb/init-functions ]
 fi
 
 <<COMMENT
+
 ## ---------------------------------------------------------
 ## copy between these lines and place them at /etc/default/spigotmc
 ## do not include the <<COMMENT and COMMENT words
@@ -63,28 +64,38 @@ SERVICE="craftbukkit.jar"
 USERNAME="bukkit"
 
 # Path of server binary and world
-MCPATH="/home/bukkit/craftbukkit"
+MCPATH="/srv/spigotmc/"
 
 # Number of CPU cores to thread across if using multithreaded garbage collection
 CPU_COUNT="2"
 
-# Where backups go
-BACKUPPATH="/home/bukkit/backups"
+# Where backups go, you can also use a scp path (e.g. user@host:backuppath)
+BACKUPPATH="/srv/spigotmc-backups/"
 
-# How many days worth of backups to keep (default 7)
+# How many backups to keep (default 7)
 BACKUPS_TO_KEEP="7"
 
 # Name of Screen session
 SCRNAME="spigotmc"
 
+# Minimum RAM to allocate to the server
+MINRAM=512M
+
+# Maximum RAM to allocate to the server
+
+MAXRAM=512M
+
+# Maximum PermGen size (Only fill this out if you are using the second $INVOCATION)!
+
+MAXPERMSIZE=128M
 ## The Java command to run the server, uncomment one INVOCATION line only!
 
-# Nothing special, just start the server with 1Gb RAM
-# INVOCATION="java -Xms1024M -Xmx1024M -Djava.net.preferIPv4Stack=true -jar $SERVICE nogui"
+# Nothing special, just start the server
+# INVOCATION="java -Xms$MINRAM -Xmx$MAXRAM -Djava.net.preferIPv4Stack=true -jar $SERVICE nogui"
 
-# This is what I run my server with, tune your RAM usage accordingly
+# This is what I run my server with
 # Tested fastest GC - Default parallel new gen collector, plus parallel old gen collector
-INVOCATION="java -Xms1024M -Xmx1024M -Djava.net.preferIPv4Stack=true -XX:MaxPermSize=128M -XX:UseSSE=3 -XX:-DisableExplicitGC -XX:+UseParallelOldGC -XX:ParallelGCThreads=$CPU_COUNT -XX:+AggressiveOpts -XX:+UseCompressedStrings -jar $SERVICE nogui"
+INVOCATION="java -Xms$MINRAM -Xmx$MAXRAM -Djava.net.preferIPv4Stack=true -XX:MaxPermSize=$MAXPERMSIZE -XX:UseSSE=3 -XX:-DisableExplicitGC -XX:+UseParallelOldGC -XX:ParallelGCThreads=$CPU_COUNT -XX:+AggressiveOpts -XX:+UseCompressedStrings -jar $SERVICE nogui"
 
 # I removed these "performance" commands as I don't see any difference with them
 # -XX:+UseFastAccessorMethods -XX:+UseAdaptiveGCBoundary
@@ -136,7 +147,7 @@ WORLDNAME="$(grep -E 'level-name' $MCPATH/server.properties | sed -e s/.*level-n
 # Find the port number from the existing server file
 SERVERPORT="$(grep -E 'server-port' $MCPATH/server.properties | sed -e s/.*server-port=//)"
 
-## Runs all commands as the non-root user
+## Runs all commands as the non-root user, courtesy the Minecraft Wiki for this snippet
 
 as_user() {
   ME="$(whoami)"
@@ -496,8 +507,12 @@ mc_info() {
 ## Connect to the active Screen session, disconnect with Ctrl+a then d
 
 mc_console() {
+  echo "* Connecting to console..."
   if server_running
   then
+    echo "* Server is running! Press Ctrl-A then D to disconnect to the console."
+    echo "* Connecting to console in 5 seconds."
+    sleep 5
     as_user "screen -S $SCRNAME -dr"
   else
     echo " * [ERROR] $SERVERNAME was not running! Unable to console."
