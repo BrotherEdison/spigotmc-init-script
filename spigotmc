@@ -1,6 +1,7 @@
 #!/bin/bash
 # /etc/init.d/spigotmc
-# version 2014-12-08 (YYYY-MM-DD)
+# version 2014-12-25 (YYYY-MM-DD)
+# Merry Christmas!
 
 ### BEGIN INIT INFO
 # Provides: spigotmc
@@ -50,18 +51,46 @@ fi
 
 ## Settings for spigotmc-init-script
 
+### ### ### ### ### ### ###
+# General Settings, pt 1  #
+### ### ### ### ### ### ###
+
 # Nice looking name of service for script to report back to users
-SERVERNAME="CraftBukkit"
+SERVERNAME="spigot"
 
 # Filename of server binary
-SERVICE="craftbukkit.jar"
+SERVICE="spigot.jar"
 
-# @deprecated: The only way to get Spigot updated is by using BuildTools.jar (1.8) or SpigotPatcher.jar (1.7).
-## URL of server executable for update checking - http://cbukk.it/craftbukkit.jar is the recommended latest Craftbukkit URL
-#SERVER_URL="http://cbukk.it/craftbukkit.jar"
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+# BuildTools automation settings                      #
+# Only change these if you know what you are doing.   #
+### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+# Master control
+USE_BUILDTOOLS=false
+
+# Jenkins URL config
+PROJECT="BuildTools"
+JENKINS_URL="https://hub.spigotmc.org/jenkins/"
+
+# JSON API
+jsonArray=$(curl -silent "${JENKINS_URL}/job/${PROJECT}/api/json?tree=lastBuild\[number\],modules\[displayName\]" | grep lastBuild|tr ',' ':'| tr -d '{}[],"' | tr ':' ' ')
+
+# Last build number
+lastBuild=${jsonArray[2]}
+
+# Archived display name, could be different from $PROJECT
+displayName=${jsonArray[5]}
+
+# Directory to execute BuildTools in
+BT_DIRECTORY="$MCPATH/BuildTools"
+
+### ### ### ### ### ### ###
+# General Settings, pt 2  #
+### ### ### ### ### ### ###
 
 # Username of non-root user who will run the server
-USERNAME="bukkit"
+USERNAME="spigot"
 
 # Path of server binary and world
 MCPATH="/srv/spigotmc/"
@@ -299,52 +328,65 @@ mc_saveon() {
   fi
 }
 
-# @deprecated: The only way to get Spigot updated is by using BuildTools.jar (1.8) or SpigotPatcher.jar (1.7).
+mc_updatescript() {
+	# Put download link together
+	downloadLink="${JENKINS_URL}/job/${PROJECT}/lastSuccessfulBuild/artifact/target/${displayName}.jar"
+	if [ ! -f ${PROJECT}.version ] || [[ ${lastBuild} -ne $(cat ${PROJECT}.version) ]] || [ ! -f "${displayName}".jar ] ; then
+	    echo "[#] Downloading newest version of ${PROJECT}.jar"
+	    curl -o "${displayName}".jar "${downloadLink}" --progress-bar
+	    # Check if archive is valid
+	    if unzip -tqq "${displayName}".jar >/dev/null 2>&1; then 
+	        echo "${lastBuild}" > "${displayName}".version
+	        echo "[#] Download completed."
+	    else
+	        echo "[!] Download failed! Check your configuration!"
+	        echo "[!] URL: ${downloadLink}"
+	        exit 1
+	    fi
+	fi
 
-### Checks for update, exits if update not required, updates if the server is not running
-#
-#mc_updatecheck() {
-#  echo " * Downloading latest $SERVERNAME executable..."
-#  as_user "cd \"$MCPATH\" && curl -# -L -o \"$MCPATH/$SERVICE.update\" \"$SERVER_URL\""
-#
-#  if [ -f "$MCPATH/$SERVICE.update" ]
-#  then
-#    echo " * Checking downloaded update against existing server..."
-#
-#    if $(diff "$MCPATH/$SERVICE" "$MCPATH/$SERVICE.update" >/dev/null)
-#    then
-#      echo " * You are already running the latest version of $SERVERNAME!"
-#      exit 0; # keep this exit in as we don't need to do anything
-#    fi
-#
-#  else
-#    echo " * [ERROR] $SERVERNAME update could not be downloaded."
-#    exit 1
-#  fi
-#
-#  if server_running
-#  then
-#    echo " * $SERVERNAME is running (pid $JAVAPID). Shutting down for update..."
-#  else
-#    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
-#    echo " * [OK] $SERVERNAME successfully updated."
-#  fi
-#}
+	echo "[#] Compiling Bukkit, CraftBukkit, and Spigot..."
+	java -jar "${displayName}".jar > /dev/null
 
-### Actually do the executable update
-#
-#mc_updatedo() {
-#  if server_running
-#  then
-#    echo " * [ERROR] $SERVICE is still running (pid $JAVAPID). Cannot update!"
-#    exit 1
-#  else
-#    as_user "/bin/cp \"$MCPATH/$SERVICE.update\" \"$MCPATH/$SERVICE\""
-#    echo " * [OK] $SERVERNAME successfully updated."
-#  fi
-#}
+	# Compilation
 
-## Check and see if a worldname was given to the backup command. Use the default world, or check the optional world exists and exit if it doesn't.
+	if [ "$?" -gt "1" ]; then
+	    echo "[!] One or more of the compilation steps failed."
+	    return 2
+	else
+	    echo "[#] Compilation succeded!"
+	fi
+
+	# Copy the jars
+	echo "[#] Copying CraftBukkit JAR..."
+	cp -f "CraftBukkit/target/craftbukkit*.jar" "./craftbukkit.jar"
+	if [ "$?" -gt "1" ]; then
+	    echo "[!] Copying CraftBukkit failed! Skipping."
+	    return 3
+	else
+	    return 0
+	fi
+	echo "[#] Copying Spigot JAR..."
+	cp -f "Spigot/Spigot-Server/target/spigot*.jar" "./spigot.jar"
+	if [ "$?" -gt "1" ]; then
+	   echo "[!] Copying Spigot failed! Skipping."
+	   return 4
+	else
+	    return 0
+	fi
+	if [ "$?" -gt "1" ]; then
+	    echo "[!] The update completed with some errors."
+	    exit 5
+	else
+	    echo "[#] The update succeded."
+	    exit 0
+	fi
+}
+
+mc_update_post() {
+	echo "* Copying new Spigot jar to server directory"
+	cp -f "./spigot.jar" $MCPATH
+}
 
 mc_checkbackup() {
   if [ -n "$1" ]
@@ -566,7 +608,14 @@ case "$1" in
  mc_start
  ;;
   update)
- echo "This option is deprecated since version 2014-11-30."
+  if [ "$USE_BUILDTOOLS" = "false" ]; then
+  	echo "You have disabled BuildTools automation in the configuration file."
+  else
+  	mc_stop
+  	cd $BT_DIRECTORY
+  	mc_updatescript
+  	mc_update_post
+  	mc_start
  ;;
   backup)
  mc_checkbackup "$2"
@@ -607,7 +656,7 @@ case "$1" in
  mc_say "${@:2}"
  ;;
   *)
- echo " * Usage: spigotmc {start|stop|restart|backup (worldname)|save-on|save-off|status|info|console|say}"
+ echo " * Usage: spigotmc {start|stop|restart|update|backup (worldname)|save-on|save-off|status|info|console|say}"
  exit 1
  ;;
 esac
