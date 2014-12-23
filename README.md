@@ -1,4 +1,4 @@
-## spigotmc-init-script
+## spigotmc-server-wrapper
 
 a fork of [superjamie](https://github.com/superjamie)'s [minecraft-init-script](https://github.com/superjamie/minecraft-init-script)
 
@@ -6,22 +6,22 @@ originally by Jamie Bainbridge <<jamie.bainbridge@gmail.com>>
 
 by Edison Chen <<brotheredison.github@yahoo.com>>
 
-This is an initscript to run a SpigotMC server on CentOS, Fedora, and Ubuntu. You are still able to run a vanilla Minecraft server with this script, however the more
+This is a wrapper to run a SpigotMC server on CentOS, Fedora, and Ubuntu. You are still able to run a vanilla Minecraft server with this script, however the more advanced features (e.g. hooking into Essentials' /broadcast) will not be available.
 
 ### Features
 
-*   Start, stop, restart CraftBukkit as a system service
+*   Start, stop, restart SpigotMC
 *   Automatic (via cron) and manual logfile rotation
 *   Automatic (via cron) and manual backups
 *   Backup compression and rotation (keeps 7 days worth of backups)
 *   Allows use of third-party backup solutions
-*   Check latest Recommended Build and update to it if required
+*   Makes use of the BuildTools automation script
 *   Information display including Java path, current memory usage, current TCP connections
 *   Able to run multiple separate instances of the server at once
 
 ### Supported Distributions
 
-*   CentOS 5-6, Fedora Core 1-6, Fedora 7-14
+*   CentOS 5-6, Fedora ~14
 *   Ubuntu (Server), Debian 1-7, Linux Mint (untested)
 
 Other distros which use SysV Init or Upstart will probably work.
@@ -98,19 +98,6 @@ As the root user:
 
     ~~~
     alias spigotmc='/etc/init.d/spigotmc'
-    ~~~
-
-*   Start the server on system boot if desired (CentOS/Fedora)
-  
-    ~~~
-    chkconfig --add spigotmc
-    chkconfig spigotmc on
-    ~~~
-
-*   Start the server on system boot if desired (Ubuntu)
-
-    ~~~
-    update-rc.d spigotmc defaults
     ~~~
 
 As the regular user, bukkit:
@@ -224,6 +211,11 @@ It is possible to run multiple instances, for example a Creative server and a Su
     ~~~
     spigotmc restart
     ~~~
+    
+*   Update SpigotMC using BuildTools Automation
+    ~~~
+    spigotmc update
+    ~~~
 
 *   Back up the map and executable
 
@@ -252,10 +244,10 @@ It is possible to run multiple instances, for example a Creative server and a Su
     spigotmc info
 
     (Sample)
-    * CraftBukkit (pid 9037) is running...
+    * SpigotMC (pid 9037) is running...
     - Java Path : /usr/java/jre1.6.0_31/bin/java
-    - Start Command : java -Xms512M -Xmx3584M -jar craftbukkit.jar nogui
-    - Server Path : /home/bukkit/craftbukkit
+    - Start Command : java -Xms512M -Xmx3584M -jar spigotmc.jar nogui
+    - Server Path : /home/bukkit/spigotmc
     - World Name : world
     - Process ID : 9037
     - Memory Usage : 742796 kb
@@ -297,7 +289,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *   Mooash on GitHub
 *   Jon Stephens
 *   Edison Chen <<brotheredison.github@yahoo.com>>
-* invalid-email-address on GitHub (me)
+*   invalid-email-address on GitHub (me)
 
 Initial concept based off
 
