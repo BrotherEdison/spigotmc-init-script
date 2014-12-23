@@ -598,6 +598,7 @@ case "$1" in
   	mc_updatescript
   	mc_update_post
   	mc_start
+  fi
  ;;
   backup)
  mc_checkbackup "$2"
