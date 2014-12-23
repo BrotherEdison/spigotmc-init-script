@@ -3,18 +3,6 @@
 # version 2014-12-25 (YYYY-MM-DD)
 # Merry Christmas!
 
-### BEGIN INIT INFO
-# Provides: spigotmc
-# Required-Start: $local_fs $remote_fs
-# Required-Stop: $local_fs $remote_fs
-# Should-Start: $network
-# Should-Stop: $network
-# Default-Start: 2 3 4 5
-# Default-Stop: 0 1 6
-# Short-Description: SpigotMC server
-# Description: Starts the SpigotMC server
-### END INIT INFO
-
 # spigotmc-init-script - An initscript to start SpigotMC
 # Copyright (C) 2011-2014 Super Jamie <jamie@superjamie.net>
 #
@@ -30,19 +18,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# Source the function library
-## CentOS/Fedora
-if [ -f /etc/rc.d/init.d/functions ]
- then
- . /etc/rc.d/init.d/functions
-fi
-## Ubuntu
-if [ -f /lib/lsb/init-functions ]
- then
- . /lib/lsb/init-functions
-fi
-
 <<COMMENT
 
 ## ---------------------------------------------------------
@@ -384,8 +359,15 @@ mc_updatescript() {
 }
 
 mc_update_post() {
-	echo "* Copying new Spigot jar to server directory"
-	cp -f "./spigot.jar" $MCPATH
+	if [ "$?" -gt 3 ] || [ "$SERVICE" = "craftbukkit.jar" ]; then
+		echo "* [ERROR] The compilation of CraftBukkit failed! Not copying the new jar."
+		exit 1
+	elif [ "$?" -gt 4 ] || [ "$SERVICE" = "spigot.jar" ]; then
+		echo "* [ERROR] The compilation of Spigot failed! Not copying the new jar."
+	else
+		echo "* Copying new jar to server directory"
+		cp -f "./$SERVICE" "$MCPATH"
+	fi
 }
 
 mc_checkbackup() {
@@ -552,7 +534,7 @@ mc_console() {
   echo "* Connecting to console..."
   if server_running
   then
-    echo "* Server is running! Press Ctrl-A then D to disconnect to the console."
+    echo "* Server is running! Press Ctrl-A then D to disconnect from the console."
     echo "* Connecting to console in 5 seconds."
     sleep 5
     as_user "screen -S $SCRNAME -dr"
